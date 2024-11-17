@@ -1,0 +1,15 @@
+[Unit]
+Description=scoreboard
+After=network.target
+
+[Service]
+User=root
+WorkingDirectory=/home/pi/scoreboard
+LimitNOFILE=4096
+ExecStart=/home/pi/scoreboard/sb
+ExecStop=/bin/kill -s SIGINT ${MAINPID}
+Restart=on-failure
+RestartSec=5s
+
+[Install]
+WantedBy=multi-user.target

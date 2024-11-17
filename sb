@@ -1,0 +1,2 @@
+#!/bin/bash
+sudo /home/pi/scoreboard/rgb/scoreboard.py -r 64 --led-cols 64 -c 6 --led-slowdown-gpio 5 --led-gpio-mapping=adafruit-hat --led-pwm-lsb-nanoseconds 100 --led-pwm-bits 3
