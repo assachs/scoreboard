@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="WebServers">
+    <option name="servers">
+      <webServer id="721a5bb8-a96a-4950-a793-801b46bf70a9" name="scoreboard1">
+        <fileTransfer rootFolder="/home/pi/scoreboard" accessType="SFTP" host="192.168.10.133" port="22" sshConfigId="28eeb69c-40b3-4e2b-9940-a566b0572540" sshConfig="pi@192.168.10.133:22 agent" authAgent="true">
+          <advancedOptions>
+            <advancedOptions dataProtectionLevel="Private" keepAliveTimeout="0" passiveMode="true" shareSSLContext="true" />
+          </advancedOptions>
+        </fileTransfer>
+      </webServer>
+    </option>
+  </component>
+</project>
