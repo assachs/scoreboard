@@ -48,6 +48,35 @@ class Scoreboardbasefunctions(object):
         graphics.DrawLine(offscreen_canvas, x1 + start, liney, x2 + start, liney, col)
         graphics.DrawLine(offscreen_canvas, x1 + start, liney + 1, x2 + start, liney + 1, col)
 
+    def drawtextArray(self, offscreen_canvas, fontKey, x, y, colornormal, coloractive, activepos, texte, sep= " / "):
+        font = self.getfont(fontKey)
+        komplett = ""
+        i = 0
+        for text in texte:
+            komplett = komplett + text
+            if len(texte) > i + 1 :
+                komplett = komplett + sep
+            i = i + 1
+
+        width = self.getTextWidth(font, komplett)
+        width = width / 2
+        start = x - width
+
+        i = 0
+        for text in texte:
+            col = self.colors[colornormal]
+            if i == activepos:
+                col = self.colors[coloractive]
+            graphics.DrawText(offscreen_canvas, font, start, y, col, text)
+            width = self.getTextWidth(font, text)
+
+            start = start + width
+
+            if len(texte) > i + 1:
+                graphics.DrawText(offscreen_canvas, font, start, y, col, sep)
+                start = start + self.getTextWidth(font, sep)
+            i = i + 1
+
     def getAdresses(self):
         adr = []
         for interface in interfaces():
