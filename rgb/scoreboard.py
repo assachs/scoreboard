@@ -14,7 +14,7 @@ from stomp_ws.client import Client
 import json
 import time
 from threading import Thread
-from netifaces import interfaces, ifaddresses, AF_INET
+from scoreboardbasefunctions import *
 
 class RunText(SampleBase):
     apikey = ''
@@ -24,39 +24,27 @@ class RunText(SampleBase):
     status = -1
     frame = None
     client = None
-
-    colors = {'w': graphics.Color(255, 255, 255),
-              'y': graphics.Color(255, 255, 0),
-              'r': graphics.Color(255, 0, 0)}
-
-    fonts = {}
-
     auszeiten = [0,0]
     auszeitenvisible = False
-
     satzende = 0
     satzendevisible = False
+    sbf = None
+
+    noswitch = False;
+    switchedsetup = False
+    noswitchedback = False
 
     def __init__(self, *args, **kwargs):
         super(RunText, self).__init__(*args, **kwargs)
         self.parser.add_argument("-t", "--text", help="The text to scroll on the RGB LED panel", default="Hello world!")
 
-        self.loadfont("saetze")
-        self.loadfont("punkte")
-        self.loadfont("doppelpunkt")
-        self.loadfont("teamnamen")
-        self.loadfont("auszeit")
+        self.sbf = Scoreboardbasefunctions()
 
-    def loadfont(self, name):
-        font = graphics.Font()
-        font.LoadFont("/home/pi/rpi-rgb-led-matrix/fonts/" + name + ".bdf")
-        self.fonts[name] = font
-
-    def getfont(self, name):
-        font = self.fonts[name]
-        if font is None:
-            print("font not found " + name )
-        return font
+        self.sbf.loadfont("saetze")
+        self.sbf.loadfont("punkte")
+        self.sbf.loadfont("doppelpunkt")
+        self.sbf.loadfont("teamnamen")
+        self.sbf.loadfont("auszeit")
 
     def message(self, frame):
         self.frame = frame
@@ -90,15 +78,13 @@ class RunText(SampleBase):
         self.matrix.SwapOnVSync(offscreen_canvas)
 
     def draw_side_nodata(self, offscreen_canvas, start):
-        self.drawtextL(offscreen_canvas, self.getfont("teamnamen"), start, 10, 'w', "keine Daten")
-        self.drawtextL(offscreen_canvas, self.getfont("teamnamen"), start, 20, 'w', "-".join(self.spiel.split("-", 3)[:3]) + "-")
-        self.drawtextL(offscreen_canvas, self.getfont("teamnamen"), start, 30, 'w', "-".join(self.spiel.split("-", 3)[3:]))
+        self.sbf.drawtextLeft(offscreen_canvas, "teamnamen", start, 10, 'w', "keine Daten")
+        self.sbf.drawtextLeft(offscreen_canvas, "teamnamen", start, 20, 'w', "-".join(self.spiel.split("-", 3)[:3]) + "-")
+        self.sbf.drawtextLeft(offscreen_canvas, "teamnamen", start, 30, 'w', "-".join(self.spiel.split("-", 3)[3:]))
         row=30
-        for interface in interfaces():
-            for link in ifaddresses(interface).get(AF_INET, ()):
-                if link.get('addr') != "127.0.0.1":
-                    row=row+10
-                    self.drawtextL(offscreen_canvas, self.getfont("teamnamen"), start, row, 'w', link.get('addr'))
+        for adr in self.sbf.getAdresses():
+            row = row + 10
+            self.sbf.drawtextLeft(offscreen_canvas, "teamnamen", start, row, 'w', adr)
 
     @staticmethod
     def calc_teamname(team):
@@ -111,68 +97,68 @@ class RunText(SampleBase):
         data = json.loads(frame.body)
         a = 0
 
-        switch = data['switched']
-        if backside:
-            switch = not(switch)
-        if (switch):
+        switch = False
+
+        if not self.noswitch:
+            switch = data['switched']
+
+        if not self.noswitchedback and backside:
+            switch = not switch
+
+        if self.switchedsetup:
+            switch = not switch
+
+        if switch:
             a = a + 1
 
-        saetzeA = data['teams'][a]['saetze']
-        saetzeB = data['teams'][(a+1)%2]['saetze']
-        baelleA = data['teams'][a]['punkteAkt']
-        baelleB = data['teams'][(a+1)%2]['punkteAkt']
-
+        teamA = data['teams'][a]
+        teamB = data['teams'][(a+1)%2]
+        saetzeA = teamA['saetze']
+        saetzeB = teamB['saetze']
+        baelleA = teamA['punkteAkt']
+        baelleB = teamB['punkteAkt']
+        teamlbez = self.calc_teamname(teamA)
+        teamrbez = self.calc_teamname(teamB)
 
         punktel = 53
         punkter = 140
 
         if self.auszeiten[a] > time.time():
-            self.drawtext(offscreen_canvas, self.getfont("auszeit"), 9 + start, 25, 'y', str(round(self.auszeiten[a] - time.time())))
+            self.sbf.drawtextCenter(offscreen_canvas, "auszeit", 9 + start, 25, 'y', str(round(self.auszeiten[a] - time.time())))
 
         if self.auszeiten[(a+1)%2] > time.time():
-            self.drawtext(offscreen_canvas, self.getfont("auszeit"), 187 + start, 25, 'y', str(round(self.auszeiten[(a+1)%2] - time.time())))
+            self.sbf.drawtextCenter(offscreen_canvas, "auszeit", 187 + start, 25, 'y', str(round(self.auszeiten[(a+1)%2] - time.time())))
 
-        if (self.satzendevisible):
+        if self.satzendevisible:
             satzende = round(self.satzende -  time.time())
             satzendem = math.floor(satzende / 60)
             satzendes = satzende % 60
             timestr = str(satzendem) + ":" + str(satzendes).zfill(2)
-            self.drawtext(offscreen_canvas, self.getfont("teamnamen"), 96 + start, 25, 'y', timestr)
+            self.sbf.drawtextCenter(offscreen_canvas, "teamnamen", 96 + start, 25, 'y', timestr)
 
-        self.drawtext(offscreen_canvas, self.getfont("saetze"), 9 + start, 60, 'y', str(saetzeA))
-        self.drawtext(offscreen_canvas, self.getfont("saetze"), 187 + start, 60, 'y', str(saetzeB))
-        self.drawtext(offscreen_canvas, self.getfont("punkte"), punktel + start, 60, 'w', str(baelleA))
-        self.drawtext(offscreen_canvas, self.getfont("punkte"), punkter + start, 60, 'w', str(baelleB))
+        self.sbf.drawtextCenter(offscreen_canvas, "saetze", 9 + start, 60, 'y', str(saetzeA))
+        self.sbf.drawtextCenter(offscreen_canvas, "saetze", 187 + start, 60, 'y', str(saetzeB))
+        self.sbf.drawtextCenter(offscreen_canvas, "punkte", punktel + start, 60, 'w', str(baelleA))
+        self.sbf.drawtextCenter(offscreen_canvas, "punkte", punkter + start, 60, 'w', str(baelleB))
 
-        self.drawtext(offscreen_canvas, self.getfont("doppelpunkt"), 100 + start, 60, 'w', ":")
+        self.sbf.drawtextCenter(offscreen_canvas, "doppelpunkt", 100 + start, 60, 'w', ":")
 
-        teamlbez = self.calc_teamname(data['teams'][a])
-        teamrbez = self.calc_teamname(data['teams'][(a+1)%2])
-
-        self.drawtext(offscreen_canvas, self.getfont("teamnamen"), 48 + start, 9, 'y', teamlbez)
-        self.drawtext(offscreen_canvas, self.getfont("teamnamen"), 144 + start, 9, 'y', teamrbez)
+        self.sbf.drawtextCenter(offscreen_canvas, "teamnamen", 48 + start, 9, 'y', teamlbez)
+        self.sbf.drawtextCenter(offscreen_canvas, "teamnamen", 144 + start, 9, 'y', teamrbez)
 
         liney = 62
-        if data['teams'][0]['service']:
-            if switch:
-                self.drawline(offscreen_canvas, 98,178, liney, start, 'y')
+        if teamA['service']:
+                self.sbf.drawline(offscreen_canvas, 14, 90, liney, start, 'y')
 
-            else:
-                self.drawline(offscreen_canvas, 14, 90, liney, start, 'y')
-
-        if data['teams'][1]['service']:
-            if switch:
-                self.drawline(offscreen_canvas, 14, 90, liney, start, 'y')
-
-            else:
-                self.drawline(offscreen_canvas, 98,178, liney, start, 'y')
+        if teamB['service']:
+                self.sbf.drawline(offscreen_canvas, 98, 178, liney, start, 'y')
 
     def draw_status(self, offscreen_canvas, start):
         if self.status > 0:
             color = 'y'
             if self.status == 3:
                 color = 'r'
-            graphics.DrawLine(offscreen_canvas, start + 0, 63, start + 0 , 63, self.colors[color])
+            self.sbf.drawpoint(offscreen_canvas, start, 63,color)
 
     def updateStatus(self):
         changed = False
@@ -219,22 +205,6 @@ class RunText(SampleBase):
             else:
                 sleep(1)
 
-
-    def drawtextL(self, offscreen_canvas, font, x, y, textColor, text):
-        col = self.colors[textColor]
-        graphics.DrawText(offscreen_canvas, font, x, y, col, text)
-
-    def drawtext(self, offscreen_canvas, font, x, y, textColor, text):
-        width = 0
-        for c in text:
-            #print("line")
-            #print(c)
-
-            width += font.CharacterWidth(ord(c))
-        width = width / 2
-        col = self.colors[textColor]
-        graphics.DrawText(offscreen_canvas, font, x - width, y, col, text)
-
     def ping(self):
         self.pingtime = time.time()
 
@@ -243,6 +213,9 @@ class RunText(SampleBase):
             json_data = json.load(json_file)
             self.spiel = json_data['spieluuid']
             self.apikey = json_data['apikey']
+            self.noswitch = json_data['noswitch']
+            self.switchedsetup = json_data['switchedsetup']
+            self.noswitchedback = json_data['noswitchedback']
 
     def connect(self, frame):
         print("OnConnect")
@@ -274,9 +247,6 @@ class RunText(SampleBase):
         self.connectclient()
 
     def run(self):
-        #self.auszeiten[0] = round(time.time()) + 30
-        #self.satzende = round(time.time()) + 180
-
         self.readconfig()
 
         thread = Thread(target=self.refresh)
@@ -284,12 +254,6 @@ class RunText(SampleBase):
         thread.start()
 
         self.connectclient()
-
-    def drawline(self, offscreen_canvas, x1, x2, liney, start, colkey):
-        col = self.colors[colkey]
-        graphics.DrawLine(offscreen_canvas, x1 + start, liney, x2 + start, liney, col)
-        graphics.DrawLine(offscreen_canvas, x1 + start, liney + 1, x2 + start, liney + 1, col)
-
 
 # Main function
 if __name__ == "__main__":
