@@ -14,6 +14,7 @@ from stomp_ws.client import Client
 import json
 import time
 from threading import Thread
+from netifaces import interfaces, ifaddresses, AF_INET
 
 class RunText(SampleBase):
     apikey = ''
@@ -89,15 +90,21 @@ class RunText(SampleBase):
         self.matrix.SwapOnVSync(offscreen_canvas)
 
     def draw_side_nodata(self, offscreen_canvas, start):
-        self.drawtext(offscreen_canvas, self.getfont("teamnamen"), 96 + start, 20, 'w', "keine Daten")
-        self.drawtext(offscreen_canvas, self.getfont("teamnamen"), 96 + start, 40, 'w', "-".join(self.spiel.split("-", 3)[:3]) + "-")
-        self.drawtext(offscreen_canvas, self.getfont("teamnamen"), 96 + start, 60, 'w', "-".join(self.spiel.split("-", 3)[3:]))
+        self.drawtextL(offscreen_canvas, self.getfont("teamnamen"), start, 10, 'w', "keine Daten")
+        self.drawtextL(offscreen_canvas, self.getfont("teamnamen"), start, 20, 'w', "-".join(self.spiel.split("-", 3)[:3]) + "-")
+        self.drawtextL(offscreen_canvas, self.getfont("teamnamen"), start, 30, 'w', "-".join(self.spiel.split("-", 3)[3:]))
+        row=30
+        for interface in interfaces():
+            for link in ifaddresses(interface).get(AF_INET, ()):
+                if link.get('addr') != "127.0.0.1":
+                    row=row+10
+                    self.drawtextL(offscreen_canvas, self.getfont("teamnamen"), start, row, 'w', link.get('addr'))
 
     @staticmethod
     def calc_teamname(team):
         teamname = team['bezeichnung']
-        if len(teamname) > 13:
-            teamname = teamname[:13].strip() + "."
+        if len(teamname) > 16:
+            teamname = teamname[:16].strip() + "."
         return teamname
 
     def draw_side_data(self,frame, offscreen_canvas, start, backside):
@@ -193,7 +200,7 @@ class RunText(SampleBase):
             self.satzendevisible = False
             changed = True
 
-        if changed or self.auszeitenvisible or self.satzendevisible:
+        if changed or self.auszeitenvisible or self.satzendevisible or self.status==3:
             self.messageShow()
 
     def refresh(self):
@@ -212,6 +219,10 @@ class RunText(SampleBase):
             else:
                 sleep(1)
 
+
+    def drawtextL(self, offscreen_canvas, font, x, y, textColor, text):
+        col = self.colors[textColor]
+        graphics.DrawText(offscreen_canvas, font, x, y, col, text)
 
     def drawtext(self, offscreen_canvas, font, x, y, textColor, text):
         width = 0
