@@ -1,6 +1,10 @@
 
 sudo mkdir -p /etc/scoreboard
-sudo cp scoreboard/files/match-sample.json /etc/scoreboard/match.json
+if [ ! -f /etc/scoreboard/match.json ]
+then
+  sudo cp scoreboard/files/match-sample.json /etc/scoreboard/match.json
+fi
+
 
 chmod 755 scoreboard/rgb/scoreboard.py
 chmod 755 scoreboard/sb
