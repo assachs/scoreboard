@@ -1,2 +1,4 @@
 #!/bin/bash
-sudo /home/pi/scoreboard/rgb/scoreboard.py -r 64 --led-cols 64 -c 6 --led-slowdown-gpio 5 --led-gpio-mapping=adafruit-hat --led-pwm-lsb-nanoseconds 100 --led-pwm-bits 3
+. /home/pi/scoreboard-hardware-settings/matrix.sh
+sudo /home/pi/scoreboard/rgb/scoreboard.py -r 64 --led-cols 64 -c $CHAINLENGTH -P $PARALLEL --led-slowdown-gpio 5 --led-gpio-mapping=$ADAPTER  --led-multiplexing=$MULTIPLEXING --led-pwm-lsb-nanoseconds 100 --led-pwm-bits 3
+
