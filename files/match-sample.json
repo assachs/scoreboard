@@ -1,4 +1,7 @@
 {
     "apikey":"your api key",
-    "spieluuid":"match uuid"
+    "spieluuid":"match uuid",
+    "noswitch": false,
+    "switchedsetup": false,
+    "noswitchedback": false
 }
