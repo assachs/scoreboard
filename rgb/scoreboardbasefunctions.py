@@ -11,6 +11,22 @@ class Scoreboardbasefunctions(object):
     def __init__(self):
         pass
 
+    def getColor(self, color):
+        colorKey = color[:1]
+        col = self.colors[colorKey]
+
+        rc = graphics.Color(col.red, col.green, col.blue);
+
+        dim = 0
+
+        if len(color) > 1:
+            dim = int(color[1:])
+
+        rc.green = max(0,rc.green - dim)
+        rc.red = max(0,rc.red - dim)
+        rc.blue = max(0,rc.blue - dim)
+        return rc
+
     def getTextWidth(self,font, text):
             width = 0
             for c in text:
@@ -29,7 +45,7 @@ class Scoreboardbasefunctions(object):
         return font
 
     def drawtextLeft(self, offscreen_canvas, fontKey, x, y, colorKey, text):
-        col = self.colors[colorKey]
+        col = self.getColor(colorKey)
         font = self.getfont(fontKey)
         graphics.DrawText(offscreen_canvas, font, x, y, col, text)
 
@@ -39,14 +55,14 @@ class Scoreboardbasefunctions(object):
         width = width / 2
         self.drawtextLeft(offscreen_canvas, fontKey, x - width, y, colorKey, text)
 
-    def drawpoint(self, offscreen_canvas, x, y, colkey):
-        col = self.colors[colkey]
+    def drawpoint(self, offscreen_canvas, x, y, colorKey):
+        col = self.getColor(colorKey)
         graphics.DrawLine(offscreen_canvas, x, y, x, y, col)
 
-    def drawline(self, offscreen_canvas, x1, x2, liney, start, colkey):
-        col = self.colors[colkey]
-        graphics.DrawLine(offscreen_canvas, x1 + start, liney, x2 + start, liney, col)
-        graphics.DrawLine(offscreen_canvas, x1 + start, liney + 1, x2 + start, liney + 1, col)
+    def drawline(self, offscreen_canvas, x1, x2, liney, colorKey):
+        col = self.getColor(colorKey)
+        graphics.DrawLine(offscreen_canvas, x1, liney, x2, liney, col)
+        graphics.DrawLine(offscreen_canvas, x1, liney + 1, x2, liney + 1, col)
 
     def drawtextArray(self, offscreen_canvas, fontKey, x, y, colornormal, coloractive, activepos, texte, sep= " / "):
         font = self.getfont(fontKey)
@@ -64,15 +80,16 @@ class Scoreboardbasefunctions(object):
 
         i = 0
         for text in texte:
-            col = self.colors[colornormal]
+            col = self.getColor(colornormal)
             if i == activepos:
-                col = self.colors[coloractive]
+                col = self.getColor(coloractive)
             graphics.DrawText(offscreen_canvas, font, start, y, col, text)
             width = self.getTextWidth(font, text)
 
             start = start + width
 
             if len(texte) > i + 1:
+                col = self.getColor(colornormal)
                 graphics.DrawText(offscreen_canvas, font, start, y, col, sep)
                 start = start + self.getTextWidth(font, sep)
             i = i + 1
