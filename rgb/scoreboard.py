@@ -12,11 +12,13 @@ from rgbmatrix import graphics
 
 from stomp_ws.client import Client
 import json
+import os
+import logging
 import time
 from threading import Thread
 from scoreboardbasefunctions import *
 
-class RunText(SampleBase):
+class ScoreboardHalle(SampleBase):
     apikey = ''
     spiel = ''
     updatetime = 0
@@ -34,8 +36,13 @@ class RunText(SampleBase):
     switchedsetup = False
     noswitchedback = False
 
+    frontoffsetx = 0
+    frontoffsety = 0
+    backoffsetx = 192
+    backoffsety = 0
+    backcontent = "FULL"
     def __init__(self, *args, **kwargs):
-        super(RunText, self).__init__(*args, **kwargs)
+        super(ScoreboardHalle, self).__init__(*args, **kwargs)
         self.parser.add_argument("-t", "--text", help="The text to scroll on the RGB LED panel", default="Hello world!")
 
         self.sbf = Scoreboardbasefunctions()
@@ -68,23 +75,28 @@ class RunText(SampleBase):
     def messageShow(self):
         offscreen_canvas = self.matrix.CreateFrameCanvas()
         offscreen_canvas.Clear()
+
+        minimizedback = False;
+        if self.backcontent != "FULL":
+            minimizedback = True;
+
         if self.frame is not None:
-            self.draw_side_data(self.frame, offscreen_canvas,0, False)
-            self.draw_side_data(self.frame, offscreen_canvas,192, True)
+            self.draw_side_data(self.frame, offscreen_canvas,self.frontoffsetx, self.frontoffsety,False, False)
+            self.draw_side_data(self.frame, offscreen_canvas,self.backoffsetx, self.backoffsety,True, minimizedback)
         else:
-            self.draw_side_nodata(offscreen_canvas, 0)
-            self.draw_side_nodata(offscreen_canvas, 192)
-        self.draw_status(offscreen_canvas, 192)
+            self.draw_side_nodata(offscreen_canvas, self.frontoffsetx, self.frontoffsety)
+            self.draw_side_nodata(offscreen_canvas, self.backoffsetx, self.backoffsety)
+        self.draw_status(offscreen_canvas, self.backoffsetx, self.backoffsety)
         self.matrix.SwapOnVSync(offscreen_canvas)
 
-    def draw_side_nodata(self, offscreen_canvas, start):
-        self.sbf.drawtextLeft(offscreen_canvas, "teamnamen", start, 10, 'w', "keine Daten")
-        self.sbf.drawtextLeft(offscreen_canvas, "teamnamen", start, 20, 'w', "-".join(self.spiel.split("-", 3)[:3]) + "-")
-        self.sbf.drawtextLeft(offscreen_canvas, "teamnamen", start, 30, 'w', "-".join(self.spiel.split("-", 3)[3:]))
-        row=30
+    def draw_side_nodata(self, offscreen_canvas, offsetx, offsety):
+        self.sbf.drawtextLeft(offscreen_canvas, "teamnamen", offsetx, offsety + 10, 'w', "keine Daten")
+        self.sbf.drawtextLeft(offscreen_canvas, "teamnamen", offsetx, offsety + 20, 'w', "-".join(self.spiel.split("-", 3)[:3]) + "-")
+        self.sbf.drawtextLeft(offscreen_canvas, "teamnamen", offsetx, offsety +30, 'w', "-".join(self.spiel.split("-", 3)[3:]))
+        row = offsety + 30
         for adr in self.sbf.getAdresses():
             row = row + 10
-            self.sbf.drawtextLeft(offscreen_canvas, "teamnamen", start, row, 'w', adr)
+            self.sbf.drawtextLeft(offscreen_canvas, "teamnamen", offsetx, row, 'w', adr)
 
     @staticmethod
     def calc_teamname(team):
@@ -93,7 +105,7 @@ class RunText(SampleBase):
             teamname = teamname[:16].strip() + "."
         return teamname
 
-    def draw_side_data(self,frame, offscreen_canvas, start, backside):
+    def draw_side_data(self,frame, offscreen_canvas, offsetx, offsety, backside, minimizedback):
         data = json.loads(frame.body)
         a = 0
 
@@ -124,41 +136,41 @@ class RunText(SampleBase):
         punkter = 140
 
         if self.auszeiten[a] > time.time():
-            self.sbf.drawtextCenter(offscreen_canvas, "auszeit", 9 + start, 25, 'y', str(round(self.auszeiten[a] - time.time())))
+            self.sbf.drawtextCenter(offscreen_canvas, "auszeit", 9 + offsetx, offsety + 25, 'y', str(round(self.auszeiten[a] - time.time())))
 
         if self.auszeiten[(a+1)%2] > time.time():
-            self.sbf.drawtextCenter(offscreen_canvas, "auszeit", 187 + start, 25, 'y', str(round(self.auszeiten[(a+1)%2] - time.time())))
+            self.sbf.drawtextCenter(offscreen_canvas, "auszeit", 187 + offsetx, offsety + 25, 'y', str(round(self.auszeiten[(a+1)%2] - time.time())))
 
         if self.satzendevisible:
             satzende = round(self.satzende -  time.time())
             satzendem = math.floor(satzende / 60)
             satzendes = satzende % 60
             timestr = str(satzendem) + ":" + str(satzendes).zfill(2)
-            self.sbf.drawtextCenter(offscreen_canvas, "teamnamen", 96 + start, 25, 'y', timestr)
+            self.sbf.drawtextCenter(offscreen_canvas, "teamnamen", 96 + offsetx, offsety + 25, 'y', timestr)
 
-        self.sbf.drawtextCenter(offscreen_canvas, "saetze", 9 + start, 60, 'y', str(saetzeA))
-        self.sbf.drawtextCenter(offscreen_canvas, "saetze", 187 + start, 60, 'y', str(saetzeB))
-        self.sbf.drawtextCenter(offscreen_canvas, "punkte", punktel + start, 60, 'w', str(baelleA))
-        self.sbf.drawtextCenter(offscreen_canvas, "punkte", punkter + start, 60, 'w', str(baelleB))
+        self.sbf.drawtextCenter(offscreen_canvas, "saetze", 9 + offsetx, offsety + 60, 'y', str(saetzeA))
+        self.sbf.drawtextCenter(offscreen_canvas, "saetze", 187 + offsetx, offsety + 60, 'y', str(saetzeB))
+        self.sbf.drawtextCenter(offscreen_canvas, "punkte", punktel + offsetx, offsety + 60, 'w', str(baelleA))
+        self.sbf.drawtextCenter(offscreen_canvas, "punkte", punkter + offsetx, offsety + 60, 'w', str(baelleB))
 
-        self.sbf.drawtextCenter(offscreen_canvas, "doppelpunkt", 100 + start, 60, 'w', ":")
+        self.sbf.drawtextCenter(offscreen_canvas, "doppelpunkt", 100 + offsetx, offsety + 60, 'w', ":")
 
-        self.sbf.drawtextCenter(offscreen_canvas, "teamnamen", 48 + start, 9, 'y', teamlbez)
-        self.sbf.drawtextCenter(offscreen_canvas, "teamnamen", 144 + start, 9, 'y', teamrbez)
+        self.sbf.drawtextCenter(offscreen_canvas, "teamnamen", 48 + offsetx, offsety + 9, 'y', teamlbez)
+        self.sbf.drawtextCenter(offscreen_canvas, "teamnamen", 144 + offsetx, offsety + 9, 'y', teamrbez)
 
-        liney = 62
+        liney = offsety + 62
         if teamA['service']:
-                self.sbf.drawline(offscreen_canvas, 14, 90, liney, start, 'y')
+                self.sbf.drawline(offscreen_canvas, 14 + offsetx, 90 + offsetx, liney, 'y')
 
         if teamB['service']:
-                self.sbf.drawline(offscreen_canvas, 98, 178, liney, start, 'y')
+                self.sbf.drawline(offscreen_canvas, 98 + offsetx, 178 + offsetx, liney, 'y')
 
-    def draw_status(self, offscreen_canvas, start):
+    def draw_status(self, offscreen_canvas, offsetx, offsety):
         if self.status > 0:
             color = 'y'
             if self.status == 3:
                 color = 'r'
-            self.sbf.drawpoint(offscreen_canvas, start, 63,color)
+            self.sbf.drawpoint(offscreen_canvas, offsetx, offsety + 63,color)
 
     def updateStatus(self):
         changed = False
@@ -195,7 +207,7 @@ class RunText(SampleBase):
             loop += 1
             loop = loop % 5
             if loop == 0:
-                print("refresh")
+                logger.info("refresh")
 
             if self.status == -1 or loop == 0 or self.auszeitenvisible or self.satzendevisible:
                 self.updateStatus()
@@ -217,8 +229,15 @@ class RunText(SampleBase):
             self.switchedsetup = json_data['switchedsetup']
             self.noswitchedback = json_data['noswitchedback']
 
+            if os.environ['PARALLEL'] == "2":
+                self.backoffsetx = 0
+                self.backoffsety = 64
+            if os.environ['BACK'] == "STATUS":
+                self.backoffsetx = 128
+                self.backcontent = "STATUS"
+
     def connect(self, frame):
-        print("OnConnect")
+        logger.info("OnConnect")
         self.readconfig()
 
         self.client.subscribe('/topic/' + self.spiel + '/spielstand', callback=self.message)
@@ -240,8 +259,8 @@ class RunText(SampleBase):
                        pingCallback=self.ping)
 
     def onerror(self, frame):
-        print("Error")
-        print(frame)
+        logger.error("Error")
+        logger.error(frame)
         self.status = 3
         sleep(2)
         self.connectclient()
@@ -256,8 +275,14 @@ class RunText(SampleBase):
         self.connectclient()
 
 # Main function
+
+logging.basicConfig()
+logging.root.setLevel(logging.INFO)
+
+logger = logging.getLogger(__name__)
+
 if __name__ == "__main__":
-    run_text = RunText()
-    run_text.process()
+    scoreboardHalle = ScoreboardHalle()
+    scoreboardHalle.process()
     while True:
         sleep(5)

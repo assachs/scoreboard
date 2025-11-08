@@ -3,5 +3,6 @@
 export PARALLEL
 export ADAPTER
 export CHAINLENGTH
+export BACK
 sudo -E /home/pi/scoreboard/rgb/scoreboard.py -r 64 --led-cols 64 -c $CHAINLENGTH -P $PARALLEL --led-slowdown-gpio 5 --led-gpio-mapping=$ADAPTER  --led-multiplexing=$MULTIPLEXING --led-pwm-lsb-nanoseconds 100 --led-pwm-bits 3
 
