@@ -173,7 +173,7 @@ class ScoreboardHalle(SampleBase):
         servicelength = 76
         if teamA['service']:
                 servicestart = 14
-                serviceende = start + servicelength
+                serviceende = servicestart + servicelength
                 self.sbf.drawline(offscreen_canvas, servicestart + offsetx, serviceende + offsetx, liney, 'y')
 
         if teamB['service']:
