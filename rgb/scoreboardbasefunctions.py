@@ -15,6 +15,9 @@ class SideCanvas(object):
     def drawTextList(self, configPath, colorKey, lines):
         self.sbf.drawtextlist(self.canvas, configPath, colorKey, lines, self.offsetX, self.offsetY)
 
+    def drawLine(self, configPath, colorKey):
+        self.sbf.drawLineConfig(self.canvas, configPath, colorKey, self.offsetX, self.offsetY)
+
 
 class Scoreboardbasefunctions(object):
     fonts = {}
@@ -71,27 +74,46 @@ class Scoreboardbasefunctions(object):
             print("font not found " + name)
         return font
 
-    def getCoordinate(self, p, parameter):
-        c = 0
-        if isinstance(p[parameter], str):
-            if p[parameter][:1] == "$":
-                key = p[parameter][1:]
-                c = self.config['constants'][key]
-            else:
-                c = p[parameter]
-        else:
-            c = p[parameter]
-        return c
+    def getConfigPosition(self, patterns):
+        p = self.config
+        for pattern in patterns.split("."):
+            p = p[pattern]
+        return p
 
-    def drawtextlist(self, offscreen_canvas, configPath, colorKey, list, offsetX, offsetY):
-        p = self.config['positions']
+    def getCoordinate(self, p):
+        c = 0
+        if isinstance(p, str):
+            if p[:1] == "$":
+                key = p[1:]
+                c = self.getCoordinate(self.getConfigPosition(key))
+            else:
+                c = p
+        else:
+            c = p
+        return c
+    def  drawLineConfig(self, offscreen_canvas, configPath, colorKey, offsetX, offsetY):
+        p = self.getConfigPosition("positions")
         for pattern in configPath.split("."):
             p = p[pattern]
 
-        x = self.getCoordinate(p, "x")
-        y = self.getCoordinate(p, "y")
+        x = self.getCoordinate(p["x"])
+        y = self.getCoordinate(p["y"])
+        length = self.getCoordinate(p["length"])
+        alignment = p['alignment']
+
+        #alignment = c
+        self.drawline(offscreen_canvas, x - length / 2 + offsetX, x + length / 2 + offsetX, y + offsetY, colorKey)
+
+    def drawtextlist(self, offscreen_canvas, configPath, colorKey, list, offsetX, offsetY):
+        p = self.getConfigPosition("positions")
+        for pattern in configPath.split("."):
+            p = p[pattern]
+
+        x = self.getCoordinate(p["x"])
+        y = self.getCoordinate(p["y"])
 
         alignment = p['alignment']
+
         fontKey = p['font']
         spacing = p['spacing']
         y = y - spacing
@@ -106,6 +128,7 @@ class Scoreboardbasefunctions(object):
                 print(y)
                 print(text)
         elif alignment == "r":
+            x = 192 - x
             for text in list:
                 y = y + spacing
                 self.drawtextRight(offscreen_canvas, fontKey, x + offsetX, y + offsetY, colorKey, text)
@@ -118,8 +141,8 @@ class Scoreboardbasefunctions(object):
         for pattern in configPath.split("."):
             p = p[pattern]
 
-        x = self.getCoordinate(p, "x")
-        y = self.getCoordinate(p, "y")
+        x = self.getCoordinate(p["x"])
+        y = self.getCoordinate(p["y"])
 
         alignment = p['alignment']
         fontKey = p['font']
@@ -129,6 +152,7 @@ class Scoreboardbasefunctions(object):
         elif alignment == "l":
             self.drawtextLeft(offscreen_canvas, fontKey, x + offsetX, y + offsetY, colorKey, text)
         elif alignment == "r":
+            x = 192 - x
             self.drawtextRight(offscreen_canvas, fontKey, x + offsetX, y + offsetY, colorKey, text)
         else:
             print("alignment not recognized")

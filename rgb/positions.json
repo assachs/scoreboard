@@ -9,60 +9,72 @@
     },
     "doppelpunkt": {
         "x": 98,
-        "y": "$ybaelle",
+        "y": "$constants.ybaelle",
         "alignment": "c",
         "font": "doppelpunkt"
     },
     "teamL": {
       "saetze": {
         "x": 0,
-        "y": "$ysaetze",
+        "y": "$constants.ysaetze",
         "alignment": "l",
         "font": "saetze"
       },
       "baelle": {
         "x": 56,
-        "y": "$ybaelle",
+        "y": "$constants.ybaelle",
         "alignment": "c",
         "font": "punkte"
       },
       "timeout": {
         "x": 0,
-        "y": "$ytimeout",
+        "y": "$constants.ytimeout",
         "alignment": "l",
         "font": "auszeit"
       },
       "name": {
         "x": 48,
-        "y": "$yteamname",
+        "y": "$constants.yteamname",
         "alignment": "c",
         "font": "teamnamen"
+      },
+      "serviceline": {
+        "x" : "$positions.teamL.baelle.x",
+        "y" : 62,
+        "length" : 50,
+        "alignment": "c"
       }
     },
     "teamR": {
       "saetze": {
-        "x": 192,
-        "y": "$ysaetze",
+        "x": "$positions.teamL.saetze.x",
+        "y": "$constants.ysaetze",
         "alignment": "r",
         "font": "saetze"
       },
       "baelle": {
         "x": 136,
-        "y": "$ybaelle",
+        "y": "$constants.ybaelle",
         "alignment": "c",
         "font": "punkte"
       },
       "timeout": {
-        "x": 192,
-        "y": "$ytimeout",
+        "x": "$positions.teamL.timeout.x",
+        "y": "$constants.ytimeout",
         "alignment": "r",
         "font": "auszeit"
       },
       "name": {
         "x": 144,
-        "y": "$yteamname",
+        "y": "$constants.yteamname",
         "alignment": "c",
          "font": "teamnamen"
+      },
+      "serviceline": {
+        "x" : "$positions.teamL.serviceline.x",
+        "y" : "$positions.teamL.serviceline.y",
+        "length" : "$positions.teamL.serviceline.length",
+        "alignment": "c"
       }
     }
   },
