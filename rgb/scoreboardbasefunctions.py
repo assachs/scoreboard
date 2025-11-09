@@ -1,8 +1,25 @@
 from rgbmatrix import graphics
 from netifaces import interfaces, ifaddresses, AF_INET
+import json
+
+class SideCanvas(object):
+    def __init__(self, offsetX, offsetY, canvas, sbf):
+        self.offsetX = offsetX
+        self.offsetY = offsetY
+        self.canvas = canvas
+        self.sbf = sbf
+
+    def drawText(self, configPath, colorKey, text):
+        self.sbf.drawtext(self.canvas, configPath, colorKey, text, self.offsetX, self.offsetY)
+
+    def drawTextList(self, configPath, colorKey, lines):
+        self.sbf.drawtextlist(self.canvas, configPath, colorKey, lines, self.offsetX, self.offsetY)
+
 
 class Scoreboardbasefunctions(object):
     fonts = {}
+    config = {}
+
 
     colors = {'w': graphics.Color(255, 255, 255),
               'y': graphics.Color(255, 255, 0),
@@ -10,6 +27,16 @@ class Scoreboardbasefunctions(object):
 
     def __init__(self):
         pass
+
+    def readconfig(self, filename):
+        with open(filename) as json_file:
+            json_data = json.load(json_file)
+            self.config = json_data
+
+
+            #fonts einlesen
+            for font in json_data['fonts']:
+                self.loadfont(font)
 
     def getColor(self, color):
         colorKey = color[:1]
@@ -44,10 +71,79 @@ class Scoreboardbasefunctions(object):
             print("font not found " + name)
         return font
 
+    def getCoordinate(self, p, parameter):
+        c = 0
+        if isinstance(p[parameter], str):
+            if p[parameter][:1] == "$":
+                key = p[parameter][1:]
+                c = self.config['constants'][key]
+            else:
+                c = p[parameter]
+        else:
+            c = p[parameter]
+        return c
+
+    def drawtextlist(self, offscreen_canvas, configPath, colorKey, list, offsetX, offsetY):
+        p = self.config['positions']
+        for pattern in configPath.split("."):
+            p = p[pattern]
+
+        x = self.getCoordinate(p, "x")
+        y = self.getCoordinate(p, "y")
+
+        alignment = p['alignment']
+        fontKey = p['font']
+        spacing = p['spacing']
+        y = y - spacing
+        if alignment == "c":
+            for text in list:
+                y = y + spacing
+                self.drawtextCenter(offscreen_canvas, fontKey, x + offsetX, y + offsetY, colorKey, text)
+        elif alignment == "l":
+            for text in list:
+                y = y + spacing
+                self.drawtextLeft(offscreen_canvas, fontKey, x + offsetX, y + offsetY, colorKey, text)
+                print(y)
+                print(text)
+        elif alignment == "r":
+            for text in list:
+                y = y + spacing
+                self.drawtextRight(offscreen_canvas, fontKey, x + offsetX, y + offsetY, colorKey, text)
+        else:
+            print("alignment not recognized")
+
+
+    def drawtext(self, offscreen_canvas, configPath, colorKey, text, offsetX, offsetY):
+        p = self.config['positions']
+        for pattern in configPath.split("."):
+            p = p[pattern]
+
+        x = self.getCoordinate(p, "x")
+        y = self.getCoordinate(p, "y")
+
+        alignment = p['alignment']
+        fontKey = p['font']
+
+        if alignment == "c":
+            self.drawtextCenter(offscreen_canvas, fontKey, x + offsetX, y + offsetY, colorKey, text)
+        elif alignment == "l":
+            self.drawtextLeft(offscreen_canvas, fontKey, x + offsetX, y + offsetY, colorKey, text)
+        elif alignment == "r":
+            self.drawtextRight(offscreen_canvas, fontKey, x + offsetX, y + offsetY, colorKey, text)
+        else:
+            print("alignment not recognized")
+
+
     def drawtextLeft(self, offscreen_canvas, fontKey, x, y, colorKey, text):
         col = self.getColor(colorKey)
         font = self.getfont(fontKey)
         graphics.DrawText(offscreen_canvas, font, x, y, col, text)
+
+    def drawtextRight(self, offscreen_canvas, fontKey, x, y, colorKey, text):
+        col = self.getColor(colorKey)
+        font = self.getfont(fontKey)
+        width = self.getTextWidth(font, text)
+        graphics.DrawText(offscreen_canvas, font, x - width, y, col, text)
 
     def drawtextCenter(self, offscreen_canvas, fontKey, x, y, colorKey, text):
         font = self.getfont(fontKey)

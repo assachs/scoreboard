@@ -1,0 +1,78 @@
+{
+  "positions": {
+    "nodata": {
+        "x": 0,
+        "y": 10,
+        "alignment": "l",
+        "spacing": 10,
+        "font": "teamnamen"
+    },
+    "doppelpunkt": {
+        "x": 98,
+        "y": "$ybaelle",
+        "alignment": "c",
+        "font": "doppelpunkt"
+    },
+    "teamL": {
+      "saetze": {
+        "x": 0,
+        "y": "$ysaetze",
+        "alignment": "l",
+        "font": "saetze"
+      },
+      "baelle": {
+        "x": 56,
+        "y": "$ybaelle",
+        "alignment": "c",
+        "font": "punkte"
+      },
+      "timeout": {
+        "x": 0,
+        "y": "$ytimeout",
+        "alignment": "l",
+        "font": "auszeit"
+      },
+      "name": {
+        "x": 48,
+        "y": "$yteamname",
+        "alignment": "c",
+        "font": "teamnamen"
+      }
+    },
+    "teamR": {
+      "saetze": {
+        "x": 192,
+        "y": "$ysaetze",
+        "alignment": "r",
+        "font": "saetze"
+      },
+      "baelle": {
+        "x": 136,
+        "y": "$ybaelle",
+        "alignment": "c",
+        "font": "punkte"
+      },
+      "timeout": {
+        "x": 192,
+        "y": "$ytimeout",
+        "alignment": "r",
+        "font": "auszeit"
+      },
+      "name": {
+        "x": 144,
+        "y": "$yteamname",
+        "alignment": "c",
+         "font": "teamnamen"
+      }
+    }
+  },
+  "constants": {
+    "ysaetze": 60,
+    "ybaelle": 60,
+    "yteamname": 9,
+    "ytimeout": 25
+  },
+  "fonts":[
+    "saetze", "punkte", "doppelpunkt", "teamnamen", "auszeit"
+  ]
+}

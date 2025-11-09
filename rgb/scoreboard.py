@@ -15,6 +15,7 @@ import json
 import os
 import logging
 import time
+import signal
 from threading import Thread
 from scoreboardbasefunctions import *
 
@@ -41,17 +42,24 @@ class ScoreboardHalle(SampleBase):
     backoffsetx = 192
     backoffsety = 0
     backcontent = "FULL"
+    kill_now = False
     def __init__(self, *args, **kwargs):
         super(ScoreboardHalle, self).__init__(*args, **kwargs)
+        signal.signal(signal.SIGINT, self.exit_gracefully)
+        signal.signal(signal.SIGTERM, self.exit_gracefully)
         self.parser.add_argument("-t", "--text", help="The text to scroll on the RGB LED panel", default="Hello world!")
 
         self.sbf = Scoreboardbasefunctions()
+        self.sbf.readconfig("/home/pi/scoreboard/rgb/positions.json")
 
-        self.sbf.loadfont("saetze")
-        self.sbf.loadfont("punkte")
-        self.sbf.loadfont("doppelpunkt")
-        self.sbf.loadfont("teamnamen")
-        self.sbf.loadfont("auszeit")
+
+    def exit_gracefully(self, signum, frame):
+        logger.info("Stopped, cleaning canvas")
+        offscreen_canvas = self.matrix.CreateFrameCanvas()
+        offscreen_canvas.Clear()
+        self.matrix.SwapOnVSync(offscreen_canvas)
+        self.kill_now = True
+
 
     def message(self, frame):
         self.frame = frame
@@ -90,13 +98,16 @@ class ScoreboardHalle(SampleBase):
         self.matrix.SwapOnVSync(offscreen_canvas)
 
     def draw_side_nodata(self, offscreen_canvas, offsetx, offsety):
-        self.sbf.drawtextLeft(offscreen_canvas, "teamnamen", offsetx, offsety + 10, 'w', "keine Daten")
-        self.sbf.drawtextLeft(offscreen_canvas, "teamnamen", offsetx, offsety + 20, 'w', "-".join(self.spiel.split("-", 3)[:3]) + "-")
-        self.sbf.drawtextLeft(offscreen_canvas, "teamnamen", offsetx, offsety +30, 'w', "-".join(self.spiel.split("-", 3)[3:]))
-        row = offsety + 30
+        lines = [];
+        lines.append("keine Daten")
+        lines.append("-".join(self.spiel.split("-", 3)[:3]) + "-")
+        lines.append("-".join(self.spiel.split("-", 3)[3:]))
+
         for adr in self.sbf.getAdresses():
-            row = row + 10
-            self.sbf.drawtextLeft(offscreen_canvas, "teamnamen", offsetx, row, 'w', adr)
+            lines.append(adr)
+
+        sideCanvas = SideCanvas(offsetx, offsety, offscreen_canvas, self.sbf)
+        sideCanvas.drawTextList("nodata", "r", lines)
 
     @staticmethod
     def calc_teamname(team):
@@ -132,14 +143,13 @@ class ScoreboardHalle(SampleBase):
         teamlbez = self.calc_teamname(teamA)
         teamrbez = self.calc_teamname(teamB)
 
-        punktel = 53
-        punkter = 140
+        sideCanvas = SideCanvas(offsetx, offsety, offscreen_canvas, self.sbf)
 
         if self.auszeiten[a] > time.time():
-            self.sbf.drawtextCenter(offscreen_canvas, "auszeit", 9 + offsetx, offsety + 25, 'y', str(round(self.auszeiten[a] - time.time())))
+            sideCanvas.drawText("teamL.timeout", "y", str(round(self.auszeiten[a] - time.time())))
 
         if self.auszeiten[(a+1)%2] > time.time():
-            self.sbf.drawtextCenter(offscreen_canvas, "auszeit", 187 + offsetx, offsety + 25, 'y', str(round(self.auszeiten[(a+1)%2] - time.time())))
+            sideCanvas.drawText("teamL.timeout", "y", str(round(self.auszeiten[(a+1)%2] - time.time())))
 
         if self.satzendevisible:
             satzende = round(self.satzende -  time.time())
@@ -148,15 +158,16 @@ class ScoreboardHalle(SampleBase):
             timestr = str(satzendem) + ":" + str(satzendes).zfill(2)
             self.sbf.drawtextCenter(offscreen_canvas, "teamnamen", 96 + offsetx, offsety + 25, 'y', timestr)
 
-        self.sbf.drawtextCenter(offscreen_canvas, "saetze", 9 + offsetx, offsety + 60, 'y', str(saetzeA))
-        self.sbf.drawtextCenter(offscreen_canvas, "saetze", 187 + offsetx, offsety + 60, 'y', str(saetzeB))
-        self.sbf.drawtextCenter(offscreen_canvas, "punkte", punktel + offsetx, offsety + 60, 'w', str(baelleA))
-        self.sbf.drawtextCenter(offscreen_canvas, "punkte", punkter + offsetx, offsety + 60, 'w', str(baelleB))
+        sideCanvas.drawText( "teamL.saetze", "y", str(saetzeA))
+        sideCanvas.drawText( "teamR.saetze", "y", str(saetzeB))
 
-        self.sbf.drawtextCenter(offscreen_canvas, "doppelpunkt", 100 + offsetx, offsety + 60, 'w', ":")
+        sideCanvas.drawText( "teamL.baelle", "w", str(baelleA))
+        sideCanvas.drawText( "teamR.baelle", "w", str(baelleB))
 
-        self.sbf.drawtextCenter(offscreen_canvas, "teamnamen", 48 + offsetx, offsety + 9, 'y', teamlbez)
-        self.sbf.drawtextCenter(offscreen_canvas, "teamnamen", 144 + offsetx, offsety + 9, 'y', teamrbez)
+        sideCanvas.drawText( "teamL.name", "y", teamlbez)
+        sideCanvas.drawText( "teamR.name", "y", teamrbez)
+
+        sideCanvas.drawText("doppelpunkt", "w", ":")
 
         liney = offsety + 62
         if teamA['service']:
@@ -284,5 +295,6 @@ logger = logging.getLogger(__name__)
 if __name__ == "__main__":
     scoreboardHalle = ScoreboardHalle()
     scoreboardHalle.process()
-    while True:
+    while not scoreboardHalle.kill_now:
         sleep(5)
+print("Stopped")
