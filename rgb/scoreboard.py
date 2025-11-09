@@ -169,18 +169,10 @@ class ScoreboardHalle(SampleBase):
 
         sideCanvas.drawText("doppelpunkt", "w", ":")
 
-        #liney = offsety + 62
-        #servicelength = 76
         if teamA['service']:
-            #servicestart = 14
-            #serviceende = servicestart + servicelength
-            #self.sbf.drawline(offscreen_canvas, servicestart + offsetx, serviceende + offsetx, liney, 'y')
             sideCanvas.drawLine("teamL.serviceline", "y")
 
         if teamB['service']:
-            #serviceende = 192 - 14
-            #servicestart = serviceende - servicelength
-            #self.sbf.drawline(offscreen_canvas, servicestart + offsetx, serviceende + offsetx, liney, 'y')
             sideCanvas.drawLine("teamR.serviceline", "y")
 
     def draw_status(self, offscreen_canvas, offsetx, offsety):

@@ -71,7 +71,7 @@
          "font": "teamnamen"
       },
       "serviceline": {
-        "x" : "$positions.teamL.serviceline.x",
+        "x" : "$positions.teamR.baelle.x",
         "y" : "$positions.teamL.serviceline.y",
         "length" : "$positions.teamL.serviceline.length",
         "alignment": "c"
