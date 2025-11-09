@@ -149,7 +149,7 @@ class ScoreboardHalle(SampleBase):
             sideCanvas.drawText("teamL.timeout", "y", str(round(self.auszeiten[a] - time.time())))
 
         if self.auszeiten[(a+1)%2] > time.time():
-            sideCanvas.drawText("teamL.timeout", "y", str(round(self.auszeiten[(a+1)%2] - time.time())))
+            sideCanvas.drawText("teamR.timeout", "y", str(round(self.auszeiten[(a+1)%2] - time.time())))
 
         if self.satzendevisible:
             satzende = round(self.satzende -  time.time())

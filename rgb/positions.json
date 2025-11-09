@@ -8,7 +8,7 @@
         "font": "teamnamen"
     },
     "doppelpunkt": {
-        "x": 98,
+        "x": 97,
         "y": "$constants.ybaelle",
         "alignment": "c",
         "font": "doppelpunkt"
