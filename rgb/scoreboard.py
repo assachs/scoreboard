@@ -17,6 +17,8 @@ import logging
 import time
 import signal
 from threading import Thread
+import threading
+import socket
 from scoreboardbasefunctions import *
 
 class ScoreboardHalle(SampleBase):
@@ -54,12 +56,13 @@ class ScoreboardHalle(SampleBase):
 
 
     def exit_gracefully(self, signum, frame):
-        logger.info("Stopped, cleaning canvas")
-        offscreen_canvas = self.matrix.CreateFrameCanvas()
-        offscreen_canvas.Clear()
-        self.matrix.SwapOnVSync(offscreen_canvas)
-        self.kill_now = True
-
+        logger.info("Stopping, cleaning canvas")
+        if not self.kill_now:
+            self.kill_now = True
+            offscreen_canvas = self.matrix.CreateFrameCanvas()
+            offscreen_canvas.Clear()
+            self.matrix.SwapOnVSync(offscreen_canvas)
+            self.client.disconnect()
 
     def message(self, frame):
         self.frame = frame
@@ -99,7 +102,7 @@ class ScoreboardHalle(SampleBase):
 
     def draw_side_nodata(self, offscreen_canvas, offsetx, offsety):
         lines = [];
-        lines.append("keine Daten")
+        lines.append(socket.gethostname() + " keine Daten")
         lines.append("-".join(self.spiel.split("-", 3)[:3]) + "-")
         lines.append("-".join(self.spiel.split("-", 3)[3:]))
 
@@ -213,11 +216,11 @@ class ScoreboardHalle(SampleBase):
 
     def refresh(self):
         loop = 0
-        while True:
+        while not self.kill_now:
             loop += 1
             loop = loop % 5
             if loop == 0:
-                logger.info("refresh")
+                logger.info(str(threading.get_ident()) + " refresh")
 
             if self.status == -1 or loop == 0 or self.auszeitenvisible or self.satzendevisible:
                 self.updateStatus()
@@ -226,6 +229,7 @@ class ScoreboardHalle(SampleBase):
                 sleep(0.2)
             else:
                 sleep(1)
+        logger.info(str(threading.get_ident()) +  " refresh finished")
 
     def ping(self):
         self.pingtime = time.time()
@@ -247,7 +251,7 @@ class ScoreboardHalle(SampleBase):
                 self.backcontent = "STATUS"
 
     def connect(self, frame):
-        logger.info("OnConnect")
+        logger.info(str(threading.get_ident()) + "OnConnect")
         self.readconfig()
 
         self.client.subscribe('/topic/' + self.spiel + '/spielstand', callback=self.message)
@@ -256,6 +260,7 @@ class ScoreboardHalle(SampleBase):
         self.pingtime = time.time()
 
     def connectclient(self):
+        logger.info(str(threading.get_ident()) + " entering connectclient")
         #client = Client("wss://bvv-tv-ws-test.bvv.volley.de:8088/tvgrafik/websocket")
         client = Client("wss://bvv-tv-ws.bvv.volley.de:8088/tvgrafik/websocket")
 
@@ -267,27 +272,32 @@ class ScoreboardHalle(SampleBase):
                        connectCallback=self.connect,
                        errorCallback=self.onerror,
                        pingCallback=self.ping)
+        logger.info(str(threading.get_ident()) + " exiting connectclient")
 
     def onerror(self, frame):
-        logger.error("Error")
+        logger.error(str(threading.get_ident()) + " onError")
         logger.error(frame)
         self.status = 3
-        sleep(2)
-        self.connectclient()
+        if not self.kill_now:
+            sleep(2)
+            logger.info(str(threading.get_ident()) + " onError reconnect")
+            self.connectclient()
+            logger.info(str(threading.get_ident()) + " onError finished")
+
 
     def run(self):
         self.readconfig()
-
         thread = Thread(target=self.refresh)
         thread.daemon = True
         thread.start()
-
+        logger.info(str(threading.get_ident()) +  " run connect")
         self.connectclient()
+        logger.info(str(threading.get_ident()) +  " run connect finished")
 
 # Main function
 
 logging.basicConfig()
-logging.root.setLevel(logging.INFO)
+logging.root.setLevel(logging.DEBUG)
 
 logger = logging.getLogger(__name__)
 
@@ -296,4 +306,4 @@ if __name__ == "__main__":
     scoreboardHalle.process()
     while not scoreboardHalle.kill_now:
         sleep(5)
-print("Stopped")
+    print("Stopped, Main Loop exited")
