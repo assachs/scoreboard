@@ -25,8 +25,10 @@ class Scoreboardbasefunctions(object):
 
 
     colors = {'w': graphics.Color(255, 255, 255),
-              'y': graphics.Color(255, 255, 0),
-              'r': graphics.Color(255, 0, 0)}
+            'y': graphics.Color(255, 255, 0),
+            'r': graphics.Color(255, 0, 0),
+            'g': graphics.Color(0, 255, 0)}
+
 
     def __init__(self):
         pass

@@ -179,11 +179,12 @@ class ScoreboardHalle(SampleBase):
             sideCanvas.drawLine("teamR.serviceline", "y")
 
     def draw_status(self, offscreen_canvas, offsetx, offsety):
+        color = 'g'
         if self.status > 0:
             color = 'y'
             if self.status == 3:
                 color = 'r'
-            self.sbf.drawpoint(offscreen_canvas, offsetx, offsety + 63,color)
+        self.sbf.drawpoint(offscreen_canvas, offsetx, offsety + 63,color)
 
     def updateStatus(self):
         changed = False
