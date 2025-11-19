@@ -8,6 +8,7 @@ fi
 
 chmod 755 scoreboard/rgb/scoreboard.py
 chmod 755 scoreboard/sb
+chmod 755 scoreboard/files/update.sh
 
 sudo cp /home/pi/scoreboard/files/scoreboard.service /etc/systemd/system/
 sudo systemctl daemon-reload
